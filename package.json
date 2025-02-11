@@ -28,6 +28,9 @@
   "dependencies": {
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0",
+    "passport-salesforce": "^0.0.2",
     "pg": "^8.13.1",
     "winston": "^3.17.0"
   },
