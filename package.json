@@ -1,0 +1,37 @@
+{
+  "name": "bevops",
+  "version": "1.0.0",
+  "description": "A suite of devops services",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest",
+    "start": "node ./server/index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Ahmed-Elawad/bevops.git"
+  },
+  "keywords": [
+    "devops",
+    "sfdc",
+    "sf",
+    "sf-cli",
+    "salesforce",
+    "open-source"
+  ],
+  "author": "Ahmed Elawad",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Ahmed-Elawad/bevops/issues"
+  },
+  "homepage": "https://github.com/Ahmed-Elawad/bevops#readme",
+  "dependencies": {
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "pg": "^8.13.1",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
+  }
+}
