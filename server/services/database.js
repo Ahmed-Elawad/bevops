@@ -1,7 +1,7 @@
 // db/index.js
 const { Pool } = require('pg');
 const dotenv = require('dotenv');
-const Logger = require('../utils/Logger.js');
+const Logger = require('../../utils/Logger.js');
 const {logError, logProcess} = Logger('bevops.database', null, true);
 
 dotenv.config();

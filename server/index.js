@@ -16,7 +16,7 @@ App.use( bodyParser.json() );
 App.use( bodyParser.urlencoded({extended: true}) );
 
 // load the services
-const { pool, query, transaction } = require('../services/database.js');
+const { pool, query, transaction } = require('./services/database.js');
 
 const homeRouter = require('./routes/home.js');
 App.use('/', homeRouter);
