@@ -45,7 +45,7 @@ COMMENT ON TABLE public."Org Connections"
 CREATE TABLE IF NOT EXISTS public."Users"
 (
     name character varying(255) NOT NULL,
-    id uuid NOT NULL GENERATED ALWAYS AS IDENTITY,
+    id uuid NOT NULL,
     email text,
     phone integer,
     PRIMARY KEY (id)
