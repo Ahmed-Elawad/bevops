@@ -4,7 +4,7 @@
   "description": "A suite of devops services",
   "main": "index.js",
   "scripts": {
-    "test": "test",
+    "test": "jest",
     "start": "node ./server/index.js"
   },
   "repository": {
@@ -27,6 +27,11 @@
   "homepage": "https://github.com/Ahmed-Elawad/bevops#readme",
   "dependencies": {
     "dotenv": "^16.4.7",
-    "express": "^4.21.2"
+    "express": "^4.21.2",
+    "pg": "^8.13.1",
+    "winston": "^3.17.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0"
   }
 }
