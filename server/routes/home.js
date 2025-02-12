@@ -10,4 +10,9 @@ router.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '..', '..', 'clients', 'home.html'));
 });
 
+router.get('/dashboard', (req, res) => {
+    logProcess('BEVOPS.GET:/dashboard', 'GET HOME', new Date());
+    res.sendFile(path.join(__dirname, '..', '..', 'clients', 'dashboard.html'));
+});
+
 module.exports = router;
