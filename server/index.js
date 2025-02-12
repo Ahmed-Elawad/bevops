@@ -42,13 +42,11 @@ require('./services/passport.js')(passport);
 /*
 Custom application routes
 */
-App.use('/', 
-    (req, res, next) => {logProcess('BEVOPS:/', null, new Date()); next();},
+App.use('/',
     require('./routes/home.js')
 );
 
-App.use('/auth',
-    (req, res, next) => {logProcess('BEVOPS:/auth', null, new Date()); next();},
+App.use('/',
     require('./routes/auth.js')
 );
 
