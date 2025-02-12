@@ -52,4 +52,4 @@ jobs:
             
             core.info(`Created PR #${pr.number}: ${pr.html_url}`);
         env:
-          GITHUB_TOKEN: ${{ secrets.BEVOPS_BRANCH_AUTOMATION }}
+          GITHUB_TOKEN: ${{ secrets.BEVOPS_BRANCH_AUTOMATION}}
