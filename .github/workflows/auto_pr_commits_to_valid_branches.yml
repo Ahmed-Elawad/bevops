@@ -5,6 +5,10 @@ on:
     branches-ignore:
       - main
 
+permissions:
+  pull-requests: write
+  contents: read
+
 jobs:
   auto-pr:
     runs-on: ubuntu-latest
@@ -20,6 +24,7 @@ jobs:
             const currentBranch = process.env.GITHUB_REF.replace('refs/heads/', '');
             const baseBranch = 'main';
 
+            // List open PRs to ensure no duplicate exists.
             const { data: existingPRs } = await github.rest.pulls.list({
               owner: context.repo.owner,
               repo: context.repo.repo,

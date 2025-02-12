@@ -1,6 +1,3 @@
-// load env variables
-try {
-
 const dot_env_path = './env/server.env';
 const Logger = require('../utils/Logger.js');
 const {logProcess, logError} = Logger('bevops.server', null, true);
@@ -50,7 +47,6 @@ App.use('/',
     require('./routes/auth.js')
 );
 
-
 /*
 Error handling
 */
@@ -81,7 +77,3 @@ const gracefulShutdown = (signal) => {
 
 process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
 process.on('SIGINT', () => gracefulShutdown('SIGINT'));
-} catch(e) {
-    debugger
-    logError(`BEVOPS:server ${e.message}`);
-}
