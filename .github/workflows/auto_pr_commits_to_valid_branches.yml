@@ -15,6 +15,7 @@ jobs:
       - name: Auto-create Pull Request
         uses: actions/github-script@v6
         with:
+          token: ${{ secrets.BEVOPS_BRANCH_AUTOMATION }}
           script: |
             const currentBranch = process.env.GITHUB_REF.replace('refs/heads/', '');
             const baseBranch = 'server';
