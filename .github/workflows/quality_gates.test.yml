@@ -1,0 +1,36 @@
+name: "PR Test and Coverage"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests with coverage thresholds
+        run: npm test
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: test/coverage/
+
+      - name: Upload HTML Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-test-report
+          path: test/reports/
