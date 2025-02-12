@@ -16,7 +16,7 @@ const limiter = rateLimit({
  * POST /login
  * Authenticate user with local strategy.
  */
-router.post('/login', (req, res, next) => {
+router.post('/login', limiter, (req, res, next) => {
   try {
     logProcess('BEVOPS.POST:/login', req.user ? req.user.userId : 'NO USER', new Date());
     passport.authenticate('local', (err, user, info) => {
