@@ -4,12 +4,19 @@ const Logger = require('../../utils/Logger.js');
 const { logProcess, logError } = Logger('bevops:routes/auth', null, true);
 const path = require('path');
 const router = express.Router();
+const rateLimit = require('express-rate-limit');
+
+// Configure rate limiter: maximum of 100 requests per 15 minutes
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // max 100 requests per windowMs
+});
 
 /**
  * POST /login
  * Authenticate user with local strategy.
  */
-router.post('/login', (req, res, next) => {
+router.post('/login', limiter, (req, res, next) => {
   try {
     logProcess('BEVOPS.POST:/login', req.user ? req.user.userId : 'NO USER', new Date());
     passport.authenticate('local', (err, user, info) => {
@@ -40,7 +47,7 @@ router.post('/login', (req, res, next) => {
  * GET /login
  * Serve the login page.
  */
-router.get('/login', (req, res) => {
+router.get('/login', limiter, (req, res) => {
   try {
     logProcess('BEVOPS.GET:/login', 'NULL', new Date());
     res.sendFile(path.join(__dirname, '..', '..', 'clients', 'login.html'));
@@ -54,7 +61,7 @@ router.get('/login', (req, res) => {
  * GET /signup
  * Serve the signup (registration) page.
  */
-router.get('/signup', (req, res) => {
+router.get('/signup', limiter, (req, res) => {
   try {
     logProcess('BEVOPS.GET:/signup', 'NULL', new Date());
     res.sendFile(path.join(__dirname, '..', '..', 'clients', 'signup.html'));
