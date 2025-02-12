@@ -47,7 +47,6 @@ App.use('/',
     require('./routes/auth.js')
 );
 
-
 /*
 Error handling
 */
