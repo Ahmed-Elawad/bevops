@@ -3,3 +3,5 @@ package-lock.json
 env/
 logs/
 Design/
+test/reports/*
+test/coverage/*
