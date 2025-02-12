@@ -18,7 +18,7 @@ jobs:
           token: ${{ secrets.BEVOPS_BRANCH_AUTOMATION }}
           script: |
             const currentBranch = process.env.GITHUB_REF.replace('refs/heads/', '');
-            const baseBranch = 'server';
+            const baseBranch = 'main';
 
             const { data: existingPRs } = await github.rest.pulls.list({
               owner: context.repo.owner,
