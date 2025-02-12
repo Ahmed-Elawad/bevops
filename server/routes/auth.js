@@ -1,9 +1,10 @@
 const express = require('express');
 const passport= require('passport');
 const Logger = require('../../utils/Logger.js');
-const {logProcess, logError} = Logger('bevops.auth', null, true);
-
+const {logProcess, logError} = Logger('bevops:routes/auth', null, true);
+const path = require('path');
 const router = express.Router();
+
 router.post('/login', (req, res, next) => {
     try {
         logProcess('BEVOPS:/login', req.user.userId, new Date());
@@ -26,7 +27,16 @@ router.post('/login', (req, res, next) => {
             });
 
         })(req, res, next);
+    }catch(e) {
+        logError(`BEVOPS:/login ${e.message}`);
+        return res.status(500).json({ message: 'Internal server error'});
+    }
+});
 
+router.get('/login', (req, res) => {
+    try {
+        logProcess('BEVOPS:GET/login', ' NULL ', new Date());
+        res.sendFile(path.join(__dirname, '..', '..', 'clients', 'login.html'));
     }catch(e) {
         logError(`BEVOPS:/login ${e.message}`);
         return res.status(500).json({ message: 'Internal server error'});
