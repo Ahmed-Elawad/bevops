@@ -55,19 +55,19 @@ App.use('/',
 Error handling
 */
 App.use((err, req, res, next) => {
-    logError('BEVOPS:Error', err.message);
+    logError(`BEVOPS:Error ${ err.message}`);
     res.status(500).send('Internal server error');
 });
 
 const server = App.listen(appPort, logProcess('Bevops =>', `Server running: http://localhost:${appPort}`), new Date());
 
 process.on('uncaughtException', (err) => {
-    logError('Uncaught Exception', err);
+    logError(`Uncaught Exception ${err}`);
     process.exit(1);
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-    logError('Unhandled Rejection at:', promise, 'reason:', reason);
+    logError(`Unhandled Rejection at: ${promise} \nreason: ${reason}` );
     process.exit(1);
 });
 

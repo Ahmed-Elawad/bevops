@@ -1,0 +1,50 @@
+name: "Auto PR on Commit to Feature branches"
+
+on:
+  push:
+    branches-ignore:
+      - main
+
+jobs:
+  auto-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Auto-create Pull Request
+        uses: actions/github-script@v6
+        with:
+          token: ${{ secrets.BEVOPS_BRANCH_AUTOMATION }}
+          script: |
+            const currentBranch = process.env.GITHUB_REF.replace('refs/heads/', '');
+            const baseBranch = 'main';
+
+            const { data: existingPRs } = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: `${context.repo.owner}:${currentBranch}`,
+              base: baseBranch,
+              state: 'open'
+            });
+            
+            if (existingPRs.length > 0) {
+              core.info(`A pull request already exists from ${currentBranch} to ${baseBranch}.`);
+              return;
+            }
+            
+            const title = `Auto PR: Merge ${currentBranch} into ${baseBranch}`;
+            const body = `This pull request was automatically generated from branch \`${currentBranch}\` on commit.\n\nPlease review the changes and merge if approved.`;
+            
+            const { data: pr } = await github.rest.pulls.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              head: currentBranch,
+              base: baseBranch,
+              title,
+              body
+            });
+            
+            core.info(`Created PR #${pr.number}: ${pr.html_url}`);
+        env:
+          GITHUB_TOKEN: ${{ secrets.BEVOPS_BRANCH_AUTOMATION }}

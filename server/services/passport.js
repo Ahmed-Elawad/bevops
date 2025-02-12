@@ -3,18 +3,19 @@ const {logProcess, logError} = Logger('bevops.auth', null, true);
 const LocalStrategy = require('passport-local').Strategy;
 const SalesforceStrategy = require('passport-salesforce').Strategy;
 const bcrypt = require('bcrypt');
+const User = require('../models/User.js');
 
 module.exports = function(passport) {
     try {
         passport.serializeUser((user, done) => {
-            logProcess('BEVOPS:passport-serialize', user.id, new Date());
+            logProcess('BEVOPS:passport-serialize', user?.id, new Date());
             done(null, user.id);
         });
 
         passport.deserializeUser((id, done) => {
             try {
                 logProcess('BEVOPS:passport-deserialize', id, new Date());
-                const user = user.findById(id);
+                const user = User.findById(id);
                 done(null, user);
             } catch(e) {
                 done(e, null);
@@ -27,7 +28,7 @@ module.exports = function(passport) {
         }, async (email, password, done) => {
             logProcess('BEVOPS:passport-local', email, new Date());
             try {
-                const user = await user.findByEmail(email);
+                const user = await User.findByEmail(email);
                 if (!user) {
                     logProcess('BEVOPS:passport-local-NUUSER', email, new Date());
                     return done(null, false, { message: 'Invalid email or password' });
@@ -55,11 +56,11 @@ module.exports = function(passport) {
                 async (accessToken, refreshToken, profile, done) => {
                     logProcess('BEVOPS:passport-salesforce', profile.id, new Date());
                     try {
-                        const user = await user.findBySalesforceId(profile.id);
+                        const user = await User.findBySalesforceId(profile.id);
                         if (user) {
                             return done(null, user);
                         }
-                        const newUser = await user.create({
+                        const newUser = await User.create({
                             salesforceId: profile.id,
                             email: profile.email,
                             name: profile.displayName,
