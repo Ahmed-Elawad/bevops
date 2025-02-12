@@ -1,0 +1,62 @@
+name: "PR Test and Coverage"
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Load test standards variables
+        id: test-standards
+        shell: bash
+        run: |
+          if [ -f test-standards.txt ]; then
+            set -a
+            source test-standards.txt
+            set +a
+            echo "COVERAGE_BRANCHES=$COVERAGE_BRANCHES"
+            echo "COVERAGE_FUNCTIONS=$COVERAGE_FUNCTIONS"
+            echo "COVERAGE_LINES=$COVERAGE_LINES"
+            echo "COVERAGE_STATEMENTS=$COVERAGE_STATEMENTS"
+            echo "::set-output name=branches::$COVERAGE_BRANCHES"
+            echo "::set-output name=functions::$COVERAGE_FUNCTIONS"
+            echo "::set-output name=lines::$COVERAGE_LINES"
+            echo "::set-output name=statements::$COVERAGE_STATEMENTS"
+          else
+            echo "test-standards.txt file not found!"
+            exit 1
+          fi
+
+      - name: Run tests with coverage thresholds
+        env:
+          COVERAGE_BRANCHES: ${{ steps.test-standards.outputs.branches }}
+          COVERAGE_FUNCTIONS: ${{ steps.test-standards.outputs.functions }}
+          COVERAGE_LINES: ${{ steps.test-standards.outputs.lines }}
+          COVERAGE_STATEMENTS: ${{ steps.test-standards.outputs.statements }}
+        run: npm test
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: /test/coverage/
+
+      - name: Upload HTML Test Report
+        uses: actions/upload-artifact@v3
+        with:
+          name: html-test-report
+          path: test/reports/
