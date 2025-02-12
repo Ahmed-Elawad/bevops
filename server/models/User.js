@@ -1,15 +1,29 @@
-/*
-In memory for mvp
-*/
+const { v4: uuidv4 } = require('uuid');
+const bcrypt = require('bcrypt');
+
+const SALT_ROUNDS = 10;
 const users = [];
 
 class User {
-  constructor({ id, username, password, salesforceId, email }) {
+  constructor({ id, username, passwordHash, email, firstName, lastName }) {
     this.id = id;
     this.username = username;
-    this.password = password;
-    this.salesforceId = salesforceId;
+    this.passwordHash = passwordHash;
     this.email = email;
+    this.firstName = firstName || '';
+    this.lastName = lastName || '';
+  }
+
+  static async create({ username, password, email, firstName, lastName }) {
+    const existingUser = await User.findOne({ username });
+    if (existingUser) {
+      throw new Error('User already exists');
+    }
+    const id = uuidv4();
+    const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
+    const newUser = new User({ id, username, passwordHash, email, firstName, lastName });
+    users.push(newUser);
+    return newUser;
   }
 
   static async findOne({ username }) {
@@ -20,17 +34,26 @@ class User {
     return users.find(u => u.id === id);
   }
 
-  static async findOrCreate(conditions, defaults) {
-    let user = users.find(u => u.salesforceId === conditions.salesforceId);
+  static async findOrCreate({ username, password, email, firstName, lastName }) {
+    let user = await User.findOne({ username });
     if (!user) {
-      user = new User({ id: users.length + 1, ...defaults, salesforceId: conditions.salesforceId });
-      users.push(user);
+      user = await User.create({ username, password, email, firstName, lastName });
     }
     return user;
   }
 
-  verifyPassword(password) {
-    return this.password === password;
+  async verifyPassword(password) {
+    return await bcrypt.compare(password, this.passwordHash);
+  }
+
+  getPublicProfile() {
+    return {
+      id: this.id,
+      username: this.username,
+      email: this.email,
+      firstName: this.firstName,
+      lastName: this.lastName
+    };
   }
 }
 

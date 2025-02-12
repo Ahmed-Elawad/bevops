@@ -5,8 +5,8 @@ const { logProcess, logError } = Logger('bevops:routes/auth', null, true);
 const path = require('path');
 const router = express.Router();
 const rateLimit = require('express-rate-limit');
+const User = require('../models/User.js');
 
-// Configure rate limiter: maximum of 100 requests per 15 minutes
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // max 100 requests per windowMs
@@ -89,9 +89,8 @@ router.post('/signup', async (req, res, next) => {
     //   - Enforce password complexity.
     //   - Check that username/email is not already in use.
     
-    // Simulate creating a new user (replace with your actual user creation logic).
     const newUser = {
-      id: Date.now(), // In real systems, use your database-generated id.
+      id: Date.now(),
       username,
       email,
       firstName,
@@ -99,8 +98,7 @@ router.post('/signup', async (req, res, next) => {
     };
     
     logProcess('BEVOPS.POST:/signup', newUser.username, new Date());
-    
-    // Optionally, automatically log the user in after successful registration.
+    User.findOrCreate(newUser, defaults);
     req.login(newUser, (err) => {
       if (err) return next(err);
       if (req.is('application/json')) {
