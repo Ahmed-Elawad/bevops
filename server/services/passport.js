@@ -12,10 +12,10 @@ module.exports = function(passport) {
             done(null, user.id);
         });
 
-        passport.deserializeUser((id, done) => {
+        passport.deserializeUser(async (id, done) => {
             try {
                 logProcess('BEVOPS:passport-deserialize', id, new Date());
-                const user = User.findById(id);
+                const user = await User.findById(id);
                 done(null, user);
             } catch(e) {
                 done(e, null);
