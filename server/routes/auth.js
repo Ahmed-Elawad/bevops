@@ -3,9 +3,10 @@ const passport = require('passport');
 const Logger = require('../../utils/Logger.js');
 const { logProcess, logError } = Logger('bevops:routes/auth', null, true);
 const path = require('path');
-const router = express.Router();
 const rateLimit = require('express-rate-limit');
 const User = require('../models/User.js');
+
+const router = express.Router();
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -20,25 +21,34 @@ router.post('/login', limiter, (req, res, next) => {
   try {
     logProcess('BEVOPS.POST:/login', req.user ? req.user.userId : 'NO USER', new Date());
     passport.authenticate('local', (err, user, info) => {
+      logProcess('  (INFO)BEVOPS.POST:/login', user ? user.id : 'NO USER', new Date());
       if (err) {
+        logError(`  (ERROR) BEVOPS.POST:/login ${err.message}`);
         return next(err);
       }
       if (!user) {
         if (req.is('application/json')) {
+          logError(`  (INFO) BEVOPS.POST:/login no user (API)`);
           return res.status(401).json({ message: info.message });
         }
+        logError(`  (INFO) BEVOPS.POST:/login no user (WEB)`);
         return res.redirect('/login?error=' + encodeURIComponent(info.message));
       }
       req.login(user, err => {
-        if (err) return next(err);
-        if (req.is('application/json')) {
-          return res.json({ message: 'Logged in', user });
+        if (err) {
+          logError(`  (ERROR) BEVOPS.POST:/login ${err.message}`);
+          return next(err);
         }
+        if (req.is('application/json')) {
+          logProcess('  (INFO) BEVOPS.POST:/login - SUCCEEDED (API)', user.id, new Date());
+          return res.json({ message: 'Logged in', user: user.getPublicProfile() });
+        }
+        logProcess('  (INFO) BEVOPS.POST:/login - SUCCEEDED (WEB)', user.id, new Date());
         return res.redirect('/dashboard');
       });
     })(req, res, next);
   } catch (e) {
-    logError(`BEVOPS.POST:/login ${e.message}`);
+    logError(`  (ERROR) BEVOPS.POST:/login ${e.message}`);
     return res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -63,10 +73,10 @@ router.get('/login', limiter, (req, res) => {
  */
 router.get('/signup', limiter, (req, res) => {
   try {
-    logProcess('BEVOPS.GET:/signup', 'NULL', new Date());
+    logProcess('  (INFO)BEVOPS.GET:/signup', 'NULL', new Date());
     res.sendFile(path.join(__dirname, '..', '..', 'clients', 'signup.html'));
   } catch (e) {
-    logError(`BEVOPS.GET:/signup ${e.message}`);
+    logError(`  (ERROR)BEVOPS.GET:/signup ${e.message}`);
     return res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -78,36 +88,31 @@ router.get('/signup', limiter, (req, res) => {
 router.post('/signup', async (req, res, next) => {
   try {
     const { username, password, email, firstName, lastName } = req.body;
+    logProcess('BEVOPS.POST:/signup', username, new Date());
 
     // Validate required fields.
     if (!username || !password || !email || !firstName) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
-    
-    // (Enterprise grade:) Insert additional validations here:
-    //   - Validate email format.
-    //   - Enforce password complexity.
-    //   - Check that username/email is not already in use.
-    
-    const newUser = {
-      id: Date.now(),
-      username,
-      email,
-      firstName,
-      lastName: lastName || '',
-    };
-    
-    logProcess('BEVOPS.POST:/signup', newUser.username, new Date());
-    User.findOrCreate(newUser, defaults);
-    req.login(newUser, (err) => {
+
+    // Additional enterprise validations can be added here (e.g. email format, password complexity, etc.)
+
+    // Use the User model's findOrCreate method, which will hash the password on creation.
+    const savedUser = await User.findOrCreate({ username, password, email, firstName, lastName });
+
+    // Automatically log the user in after registration.
+    req.login(savedUser, (err) => {
       if (err) return next(err);
       if (req.is('application/json')) {
-        return res.json({ message: 'Registration successful', user: newUser });
+        return res.json({
+          message: 'Registration successful',
+          user: savedUser.getPublicProfile()
+        });
       }
       return res.redirect('/dashboard');
     });
   } catch (e) {
-    logError(`BEVOPS.POST:/signup ${e.message}`);
+    logError(`  (ERROR)BEVOPS.POST:/signup ${e.message}`);
     return res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -127,13 +132,13 @@ router.get('/logout', (req, res) => {
     logProcess('BEVOPS.GET:/logout', req.user ? req.user.userId : 'NO USER', new Date());
     req.logout(err => {
       if (err) {
-        logError(`BEVOPS.GET:/logout ${err.message}`);
+        logError(`  (ERROR)BEVOPS.GET:/logout ${err.message}`);
         return res.status(500).json({ message: 'Internal server error' });
       }
-      res.redirect('/login');
+      res.redirect('/');
     });
   } catch (e) {
-    logError(`BEVOPS.GET:/logout ${e.message}`);
+    logError(`  (ERROR)BEVOPS.GET:/logout ${e.message}`);
     return res.status(500).json({ message: 'Internal server error' });
   }
 });
