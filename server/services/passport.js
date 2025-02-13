@@ -1,5 +1,5 @@
 const Logger = require('../../utils/Logger.js');
-const {logProcess, logError} = Logger('bevops.auth', null, true);
+const { logProcess, logError } = Logger('bevops.auth', null, true);
 const LocalStrategy = require('passport-local').Strategy;
 const SalesforceStrategy = require('passport-salesforce').Strategy;
 const bcrypt = require('bcrypt');
@@ -23,27 +23,27 @@ module.exports = function(passport) {
         });
 
         passport.use('local', new LocalStrategy({
-            usernameField: 'email',
+            usernameField: 'username',
             passwordField: 'password',
-        }, async (email, password, done) => {
-            logProcess('BEVOPS:passport-local', email, new Date());
+          }, async (username, password, done) => {
+            logProcess('BEVOPS:passport-local', username, new Date());
             try {
-                const user = await User.findByEmail(email);
-                if (!user) {
-                    logProcess('BEVOPS:passport-local-NUUSER', email, new Date());
-                    return done(null, false, { message: 'Invalid email or password' });
-                }
-                const match = await bcrypt.compare(password, user.password);
-                if (match) {
-                    logProcess('BEVOPS:passport-local-MATCHED', user.id, new Date());
-                    return done(null, user);
-                }
-                return done(null, false, { message: 'Invalid email or password' });
-            } catch(e) {
-                logError(`BEVOPS:passport-local ${e.message}`);
-                return done(e);
+              const user = await User.findByUsername(username);
+              if (!user) {
+                logProcess('BEVOPS:passport-local-NUUSER', username, new Date());
+                return done(null, false, { message: 'Invalid username or password' });
+              }
+              const match = await bcrypt.compare(password, user.passwordHash);
+              if (match) {
+                logProcess('BEVOPS:passport-local-MATCHED', user.id, new Date());
+                return done(null, user);
+              }
+              return done(null, false, { message: 'Invalid username or password' });
+            } catch (e) {
+              logError(`BEVOPS:passport-local ${e.message}`);
+              return done(e);
             }
-        }));
+          }));
 
         passport.use(
             'salesforce',
@@ -72,8 +72,8 @@ module.exports = function(passport) {
                     }
                 }
             )
-        )
-    }catch(e) {
+        );
+    } catch(e) {
         logError(`BEVOPS:passport ${e.message}`);
     }
 };
