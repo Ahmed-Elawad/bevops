@@ -39,9 +39,9 @@ router.post('/login', limiter, (req, res, next) => {
           logError(`  (ERROR) BEVOPS.POST:/login ${err.message}`);
           return next(err);
         }
-        if (req.is('application/json')) {
+        if (req.is('aspplication/json')) {
           logProcess('  (INFO) BEVOPS.POST:/login - SUCCEEDED (API)', user.id, new Date());
-          return res.json({ message: 'Logged in', user: user.getPublicProfile() });
+          return res.json({ message: 'Logged in', user: user });
         }
         logProcess('  (INFO) BEVOPS.POST:/login - SUCCEEDED (WEB)', user.id, new Date());
         return res.redirect('/dashboard');
@@ -106,7 +106,7 @@ router.post('/signup', async (req, res, next) => {
       if (req.is('application/json')) {
         return res.json({
           message: 'Registration successful',
-          user: savedUser.getPublicProfile()
+          user: savedUser
         });
       }
       return res.redirect('/dashboard');
