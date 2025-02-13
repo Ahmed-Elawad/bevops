@@ -46,6 +46,10 @@ class User {
     return await bcrypt.compare(password, this.passwordHash);
   }
 
+  static async findByUsername(username) {
+    return users.find(u => u.username === username);
+  }
+
   getPublicProfile() {
     return {
       id: this.id,
