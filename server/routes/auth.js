@@ -19,7 +19,7 @@ const limiter = rateLimit({
  */
 router.post('/login', limiter, (req, res, next) => {
   try {
-    logProcess('BEVOPS.POST:/login', req.user ? req.user.userId : 'NO USER', new Date());
+    logProcess('BEVOPS.POST:/login', req.user ? req.user.id : 'NO USER', new Date());
     passport.authenticate('local', (err, user, info) => {
       logProcess('  (INFO)BEVOPS.POST:/login', user ? user.id : 'NO USER', new Date());
       if (err) {
