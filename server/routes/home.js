@@ -17,6 +17,10 @@ router.get('/', limiter, (req, res) => {
 });
 
 router.get('/dashboard', limiter, (req, res) => {
+    if (!req.isAuthenticated()) {
+        logProcess('BEVOPS.GET:/dashboard', 'NOT AUTHENTICATED', new Date());
+        return res.redirect('/');
+    }
     logProcess('BEVOPS.GET:/dashboard', 'GET HOME', new Date());
     res.sendFile(path.join(__dirname, '..', '..', 'clients', 'dashboard.html'));
 });

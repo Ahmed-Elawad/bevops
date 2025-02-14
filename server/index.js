@@ -14,7 +14,6 @@ const App = express();
 
 // app paths
 const bodyParser = require('body-parser');
-const { log } = require('winston');
 
 App.use( express.json() );
 App.use( bodyParser.json() );

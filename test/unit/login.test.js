@@ -1,109 +1,170 @@
 const request = require('supertest');
 const express = require('express');
-const passport = require('passport');
 
-jest.mock('passport', () => ({
-    authenticate: jest.fn((strategy, options) => {
-      if (strategy === 'salesforce') {
-        return (req, res, next) => res.redirect('/dummy-salesforce');
+jest.mock('passport', () => {
+  const authenticate = jest.fn();
+  return {
+    authenticate: authenticate.mockImplementation((strategy, callback) => {
+        return (req, res, next) => {
+          if (strategy === 'salesforce') {
+            res.redirect(302, 'https://salesforce-mock-login');
+            return;
+          } else if (strategy === 'local') {
+            if (req.body.username === 'testuser' && req.body.password === 'password123') {
+                const mockUser = { id: 'test-user-id', username: 'testuser' };
+                req.login(mockUser, (err) => {
+                  if (err) return next(err);
+                  return callback(null, mockUser);
+                });
+                return;
+            } else {
+              return callback(null, false, { message: 'Invalid credentials' });
+            }
+          } else {
+            return callback(null, false, { message: 'Authentication failed' });
+          }
+        };
       }
-      // For other strategies, simply call next() or simulate a success
-      return (req, res, next) => next();
-    }),
-    initialize: jest.fn(),
-    session: jest.fn(),
-  }));
+    ),
+      initialize: () => (req, res, next) => next(),
+      session: () => (req, res, next) => next(),
+  };
+});
+
+const mockFindOrCreate = jest.fn();
+jest.mock('../../server/models/User.js', () => ({
+  findOrCreate: mockFindOrCreate,
+}));
 
 const authRoutes = require('../../server/routes/auth');
 
 function createTestApp() {
-    const app = express();
-    app.use(express.json());
-  
-    // Provide dummy implementations for req.login and req.logout.
+  const app = express();
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
+
+  app.use((req, res, next) => {
+    req.is = (type) => {
+      return type === 'application/json'; 
+    };
+    next();
+  });
+
     app.use((req, res, next) => {
-      req.login = (user, callback) => callback();
-      req.logout = (callback) => callback();
-      req.user = { userId: 1 };
+      req.login = (user, callback) => {
+        if (callback) {
+          callback(null);
+        }
+      };
+      req.logout = (callback) => {
+        if (callback) {
+          callback(null);
+        }
+      };
       next();
     });
-  
-    app.use('/auth', authRoutes);
-    // Error handler to pass errors as JSON.
-    app.use((err, req, res, next) => {
-      res.status(500).json({ message: err.message });
-    });
-  
-    return app;
-  }
+
+  const passport = require('passport');
+  app.use(passport.initialize());
+  app.use(passport.session());
+
+  app.use(authRoutes);
+
+  app.use((err, req, res, next) => {
+    console.error("Error in express app", err)
+    res.status(500).json({ message: err.message });
+  });
+
+  return app;
+}
 
 describe('Auth Routes', () => {
   let app;
+  let authenticateMock;
 
   beforeEach(() => {
     app = createTestApp();
     jest.clearAllMocks();
+    authenticateMock = require('passport').authenticate;
   });
 
-  describe('POST /auth/login', () => {
-    it('should return 401 with an error message when authentication fails', async () => {
-      passport.authenticate.mockImplementation((strategy, callback) => {
-        return (req, res, next) => {
-          callback(null, false, { message: 'Invalid credentials' });
-        };
-      });
-
-      const response = await request(app)
-        .post('/auth/login')
-        .set('Content-Type', 'application/json')
-        .send({ username: 'wrong', password: 'wrong' });
-
-      expect(response.statusCode).toBe(401);
-      expect(response.body).toHaveProperty('message', 'Invalid credentials');
+    test('GET /login/salesforce should simulate a redirect', async () => {
+      const response = await request(app).get('/login/salesforce');
+      expect(response.status).toBe(302);
+      expect(response.headers.location).toBe('https://salesforce-mock-login');
     });
+  
+    test('GET /login should return the login page', async () => {
+      const response = await request(app).get('/login');
+      expect(response.status).toBe(200);
+      expect(response.type).toMatch(/html/);
+    });
+  
+  test('POST /login should successfully log in a user', async () => {
+    const response = await request(app).post('/login')
+        .send({ username: 'testuser', password: 'password123' });
 
-    it('should return a success message with user details when authentication succeeds', async () => {
-      const dummyUser = { userId: 1, username: 'testuser' };
-      passport.authenticate.mockImplementation((strategy, callback) => {
-        return (req, res, next) => {
-          callback(null, dummyUser, {});
-        };
+      expect(response.status).toBe(200);
+      expect(authenticateMock).toHaveBeenCalledWith('local', expect.any(Function));
+  });
+
+  test('POST /login with invalid credentials should fail', async () => {
+    const response = await request(app)
+      .post('/login')
+      .send({ username: 'invaliduser', password: 'wrongpassword' });
+
+    expect(response.status).toBe(401);
+    expect(authenticateMock).toHaveBeenCalledWith('local', expect.any(Function));
+  });
+
+  test('GET /signup should return the signup page', async () => {
+    const response = await request(app).get('/signup');
+    expect(response.status).toBe(200);
+    expect(response.type).toMatch(/html/);
+  });
+
+  test('POST /signup should register a new user and redirect', async () => {
+    const mockUser = {
+      id: 'new-user-id',
+      username: 'newuser',
+      email: 'test@example.com',
+      firstName: 'Test',
+      lastName: 'User'
+    };
+    mockFindOrCreate.mockResolvedValue(mockUser);
+
+    const response = await request(app)
+      .post('/signup')
+      .send({
+        username: 'newuser',
+        password: 'password123',
+        email: 'test@example.com',
+        firstName: 'Test',
+        lastName: 'User'
       });
 
-      const response = await request(app)
-        .post('/auth/login')
-        .set('Content-Type', 'application/json')
-        .send({ username: 'testuser', password: 'password' });
-
-      expect(response.statusCode).toBe(200);
-      expect(response.body).toHaveProperty('message', 'Logged in');
-      expect(response.body).toHaveProperty('user');
-      expect(response.body.user).toMatchObject(dummyUser);
+    expect(response.status).toBe(200);
+    expect(mockFindOrCreate).toHaveBeenCalledTimes(1);
+    expect(mockFindOrCreate).toHaveBeenCalledWith({
+      username: 'newuser',
+      password: 'password123',
+      email: 'test@example.com',
+      firstName: 'Test',
+      lastName: 'User'
     });
   });
 
-  describe('GET /auth/login/salesforce', () => {
-    it('should invoke passport.salesforce strategy and simulate a redirect', async () => {
-      passport.authenticate.mockImplementation((strategy) => {
-        return (req, res, next) => {
-          res.redirect('/dummy-salesforce');
-        };
-      });
-
-      const response = await request(app)
-        .get('/auth/login/salesforce');
-
-      expect(response.statusCode).toBe(302);
-      expect(response.headers.location).toBe('/dummy-salesforce');
-    });
+  test('POST /signup should reject if any fields are missing', async () => {
+    const response = await request(app)
+      .post('/signup')
+      .send({ username: 'newuser', password: 'password123' });
+    expect(response.status).toBe(400);
+    expect(response.body).toEqual({ message: 'Missing required fields' });
   });
 
-  describe('GET /auth/logout', () => {
-    it('should logout and redirect to /login', async () => {
-      const response = await request(app)
-        .get('/auth/logout');
-      expect(response.statusCode).toBe(302);
-      expect(response.headers.location).toBe('/login');
-    });
+  test('GET /logout should log out the user and redirect to the root path', async () => {
+    const response = await request(app).get('/logout');
+    expect(response.status).toBe(302);
+    expect(response.headers.location).toBe('/');
   });
 });
