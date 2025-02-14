@@ -1,30 +1,24 @@
-// test/unit/login.test.js
 const request = require('supertest');
 const express = require('express');
 
-// IMPORTANT: Place the mock at the very top so that any module requiring 'passport'
-// gets the mocked version.
 jest.mock('passport', () => {
-  const authenticate = jest.fn(); // Keep track of calls
-    // Mock Strategy and callback
+  const authenticate = jest.fn();
   return {
     authenticate: authenticate.mockImplementation((strategy, options, callback) => {
         return (req, res, next) => {
          
           if (strategy === 'salesforce') {
-            // Simulate Salesforce redirect.
             res.redirect(302, 'https://salesforce-mock-login');
-            return; // Important to stop further execution
+            return;
           } else if (strategy === 'local') {
             if (req.body.username === 'testuser' && req.body.password === 'password123') {
                 const mockUser = { id: 'test-user-id', username: 'testuser' };
                 req.login(mockUser, (err) => {
                   if (err) return next(err);
-                  return callback(null, mockUser); // Successful authentication
+                  return callback(null, mockUser);
                 });
                 return;
             } else {
-              // Simulate authentication failure
               return callback(null, false, { message: 'Invalid credentials' });
             }
           } else {
@@ -38,23 +32,18 @@ jest.mock('passport', () => {
   };
 });
 
-// Mock the User model's findOrCreate method.
 const mockFindOrCreate = jest.fn();
 jest.mock('../../server/models/User.js', () => ({
   findOrCreate: mockFindOrCreate,
 }));
 
-// Now require the auth routes after mocking passport.
 const authRoutes = require('../../server/routes/auth');
 
-// Helper to create a minimal Express app for testing.
 function createTestApp() {
   const app = express();
-  // Parse both JSON and URL-encoded bodies.
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
-  // Override req.is to force JSON recognition.
   app.use((req, res, next) => {
     req.is = (type) => {
       return type === 'application/json'; 
@@ -62,30 +51,26 @@ function createTestApp() {
     next();
   });
 
-    // Provide dummy implementations for req.login and req.logout.
     app.use((req, res, next) => {
       req.login = (user, callback) => {
         if (callback) {
-          callback(null); // pass null to the callback
+          callback(null);
         }
-      }; // Pass null to callback
+      };
       req.logout = (callback) => {
         if (callback) {
-          callback(null); // pass null to the callback
+          callback(null);
         }
       };
       next();
     });
 
-  // Setup Passport middleware.
   const passport = require('passport');
   app.use(passport.initialize());
   app.use(passport.session());
 
-  // Mount the auth routes at /auth.
   app.use(authRoutes);
 
-  // Error handler: send error messages as JSON.
   app.use((err, req, res, next) => {
     console.error("Error in express app", err)
     res.status(500).json({ message: err.message });
@@ -96,12 +81,12 @@ function createTestApp() {
 
 describe('Auth Routes', () => {
   let app;
-  let authenticateMock; // To access the mock function directly
+  let authenticateMock;
 
   beforeEach(() => {
     app = createTestApp();
     jest.clearAllMocks();
-    authenticateMock = require('passport').authenticate; // Get the mock
+    authenticateMock = require('passport').authenticate;
   });
 
     test('GET /auth/login/salesforce should simulate a redirect', async () => {
