@@ -1,4 +1,3 @@
-// server/routes/auth.js
 const express = require('express');
 const passport = require('passport');
 const Logger = require('../../utils/Logger.js');
@@ -35,7 +34,7 @@ router.post('/login', limiter, (req, res, next) => {
         logError(`  (INFO) BEVOPS.POST:/login no user (WEB)`);
         return res.redirect('/login?error=' + encodeURIComponent(info.message));
       }
-      req.login(user, (err) => { // Wrap req.login in a try/catch
+      req.login(user, (err) => {
         if (err) {
           logError(`  (ERROR) BEVOPS.POST:/login ${err.message}`);
           return next(err);
@@ -49,7 +48,7 @@ router.post('/login', limiter, (req, res, next) => {
       });
     })(req, res, next);
   } catch (e) {
-    logError(`  (ERROR) BEVOPS.POST:/login ${e.message}`);
+    logError(`  (ERROR) BEVOPS.POST:/login ${e.message}\n${e.stack}`);
     return res.status(500).json({ message: 'Internal server error' });
   }
 });
@@ -91,17 +90,11 @@ router.post('/signup', async (req, res, next) => {
     const { username, password, email, firstName, lastName } = req.body;
     logProcess('BEVOPS.POST:/signup', username, new Date());
 
-    // Validate required fields.
     if (!username || !password || !email || !firstName) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    // Additional enterprise validations can be added here (e.g. email format, password complexity, etc.)
-
-    // Use the User model's findOrCreate method, which will hash the password on creation.
     const savedUser = await User.findOrCreate({ username, password, email, firstName, lastName });
-
-    // Automatically log the user in after registration.
     req.login(savedUser, (err) => {
       if (err) return next(err);
       if (req.is('application/json')) {

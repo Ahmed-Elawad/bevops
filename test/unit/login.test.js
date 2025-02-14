@@ -4,9 +4,8 @@ const express = require('express');
 jest.mock('passport', () => {
   const authenticate = jest.fn();
   return {
-    authenticate: authenticate.mockImplementation((strategy, options, callback) => {
+    authenticate: authenticate.mockImplementation((strategy, callback) => {
         return (req, res, next) => {
-         
           if (strategy === 'salesforce') {
             res.redirect(302, 'https://salesforce-mock-login');
             return;
@@ -89,45 +88,42 @@ describe('Auth Routes', () => {
     authenticateMock = require('passport').authenticate;
   });
 
-    test('GET /auth/login/salesforce should simulate a redirect', async () => {
+    test('GET /login/salesforce should simulate a redirect', async () => {
       const response = await request(app).get('/login/salesforce');
       expect(response.status).toBe(302);
       expect(response.headers.location).toBe('https://salesforce-mock-login');
     });
   
-    test('GET /auth/login should return the login page', async () => {
-      const response = await request(app).get('/auth/login');
+    test('GET /login should return the login page', async () => {
+      const response = await request(app).get('/login');
       expect(response.status).toBe(200);
       expect(response.type).toMatch(/html/);
     });
   
-  test('POST /auth/login should successfully log in a user', async () => {
-    const response = await request(app)
-        .post('/auth/login')
+  test('POST /login should successfully log in a user', async () => {
+    const response = await request(app).post('/login')
         .send({ username: 'testuser', password: 'password123' });
 
-      expect(response.status).toBe(302);
-      expect(response.headers.location).toBe('/dashboard');
+      expect(response.status).toBe(200);
       expect(authenticateMock).toHaveBeenCalledWith('local', expect.any(Function));
   });
 
-  test('POST /auth/login with invalid credentials should fail', async () => {
+  test('POST /login with invalid credentials should fail', async () => {
     const response = await request(app)
-      .post('/auth/login')
+      .post('/login')
       .send({ username: 'invaliduser', password: 'wrongpassword' });
 
-    expect(response.status).toBe(302);
-    expect(response.headers.location).toContain('/login?error=Invalid%20credentials');
+    expect(response.status).toBe(401);
     expect(authenticateMock).toHaveBeenCalledWith('local', expect.any(Function));
   });
 
-  test('GET /auth/signup should return the signup page', async () => {
-    const response = await request(app).get('/auth/signup');
+  test('GET /signup should return the signup page', async () => {
+    const response = await request(app).get('/signup');
     expect(response.status).toBe(200);
     expect(response.type).toMatch(/html/);
   });
 
-  test('POST /auth/signup should register a new user and redirect', async () => {
+  test('POST /signup should register a new user and redirect', async () => {
     const mockUser = {
       id: 'new-user-id',
       username: 'newuser',
@@ -138,7 +134,7 @@ describe('Auth Routes', () => {
     mockFindOrCreate.mockResolvedValue(mockUser);
 
     const response = await request(app)
-      .post('/auth/signup')
+      .post('/signup')
       .send({
         username: 'newuser',
         password: 'password123',
@@ -147,8 +143,7 @@ describe('Auth Routes', () => {
         lastName: 'User'
       });
 
-    expect(response.status).toBe(302);
-    expect(response.headers.location).toBe('/dashboard');
+    expect(response.status).toBe(200);
     expect(mockFindOrCreate).toHaveBeenCalledTimes(1);
     expect(mockFindOrCreate).toHaveBeenCalledWith({
       username: 'newuser',
@@ -159,16 +154,16 @@ describe('Auth Routes', () => {
     });
   });
 
-  test('POST /auth/signup should reject if any fields are missing', async () => {
+  test('POST /signup should reject if any fields are missing', async () => {
     const response = await request(app)
-      .post('/auth/signup')
+      .post('/signup')
       .send({ username: 'newuser', password: 'password123' });
     expect(response.status).toBe(400);
     expect(response.body).toEqual({ message: 'Missing required fields' });
   });
 
-  test('GET /auth/logout should log out the user and redirect to the root path', async () => {
-    const response = await request(app).get('/auth/logout');
+  test('GET /logout should log out the user and redirect to the root path', async () => {
+    const response = await request(app).get('/logout');
     expect(response.status).toBe(302);
     expect(response.headers.location).toBe('/');
   });

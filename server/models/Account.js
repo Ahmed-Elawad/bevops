@@ -1,4 +1,3 @@
-// server/models/Account.js
 const db = require('../services/database.js');
 const { logError, logProcess } = require('../../utils/Logger.js')('bevops:models:Account', null, true);
 const { v4: uuidv4 } = require('uuid');
@@ -13,10 +12,10 @@ class Account {
   }
   /**
    * Creates a new account.
-   * @param {Object} accountData - Account data.
-   * @returns {Promise<Account>} The created account.
+   * @param {Object} accountData 
+   * @returns {Promise<Account>}
    */
-  static async create({ name }) { // Removed id from params
+  static async create({ name }) {
     let newAccount;
       try {
           logProcess('Creating account', name, new Date());
@@ -25,7 +24,7 @@ class Account {
             throw new Error('Account already exists');
           }
           const id = uuidv4();
-           newAccount = new Account({ id, name }); // Create Account object after UUID generation
+           newAccount = new Account({ id, name });
 
           const query = 'INSERT INTO accounts (id, name) VALUES ($1, $2)';
           const values = [id, name];
@@ -37,8 +36,8 @@ class Account {
           }
           return newAccount;
       } catch (error) {
-          logError(`Error creating account ${error.message}`);
-          throw error; // re-throw error to ensure test case fails
+          logError(`Exception creating account ${error.message}`);
+          throw error; 
       }
   }
   /**
@@ -79,17 +78,20 @@ class Account {
           const values = [name];
           try {
             const result = await db.query(query, values);
-            if (result.rowCount === 0) {
+            if (result?.rowCount === 0) {
+              return null;
+            }
+            if (!result?.rows || !result?.rows[0]) {
               return null;
             }
             const accountData = result.rows[0];
             return new Account(accountData);
           } catch (error) {
-            logError('Error finding account by name', { error: error.message });
+            logError(`Error finding account by name ${error.message}`);
             throw error;
           }
       } catch (error) {
-        logError(`Error finding account by name ${error.message}`);
+        logError(`Exception finding account by name ${error.message}`);
         return null;
       }
   }
