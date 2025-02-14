@@ -1,3 +1,4 @@
+// server/routes/auth.js
 const express = require('express');
 const passport = require('passport');
 const Logger = require('../../utils/Logger.js');
@@ -34,12 +35,12 @@ router.post('/login', limiter, (req, res, next) => {
         logError(`  (INFO) BEVOPS.POST:/login no user (WEB)`);
         return res.redirect('/login?error=' + encodeURIComponent(info.message));
       }
-      req.login(user, err => {
+      req.login(user, (err) => { // Wrap req.login in a try/catch
         if (err) {
           logError(`  (ERROR) BEVOPS.POST:/login ${err.message}`);
           return next(err);
         }
-        if (req.is('aspplication/json')) {
+        if (req.is('application/json')) {
           logProcess('  (INFO) BEVOPS.POST:/login - SUCCEEDED (API)', user.id, new Date());
           return res.json({ message: 'Logged in', user: user });
         }
@@ -121,7 +122,7 @@ router.post('/signup', async (req, res, next) => {
  * GET /login/salesforce
  * Initiate Salesforce OAuth login.
  */
-router.get('/login/salesforce', passport.authenticate('salesforce'));
+router.get('/login/salesforce',  passport.authenticate('salesforce', {}, (err, user, info) => {}));
 
 /**
  * GET /logout
@@ -130,7 +131,7 @@ router.get('/login/salesforce', passport.authenticate('salesforce'));
 router.get('/logout', (req, res) => {
   try {
     logProcess('BEVOPS.GET:/logout', req.user ? req.user.userId : 'NO USER', new Date());
-    req.logout(err => {
+    req.logout((err) => {
       if (err) {
         logError(`  (ERROR)BEVOPS.GET:/logout ${err.message}`);
         return res.status(500).json({ message: 'Internal server error' });
